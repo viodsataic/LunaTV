@@ -304,20 +304,12 @@ export async function getConfig(): Promise<AdminConfig> {
     console.error('获取管理员配置失败:', e);
   }
 
-  // db 中无配置，执行一次初始化
-  // 注意：当缓存存在时（说明之前成功加载过），不要覆盖DB
+  // db 中无配置，执行一次初始化（只生成，不保存到DB，避免冷启动时覆盖用户数据）
   if (!adminConfig) {
-    const needSave = !cachedConfig;
     adminConfig = await getInitConfig(cachedConfig?.ConfigFile || "");
-    adminConfig = configSelfCheck(adminConfig);
-    cachedConfig = adminConfig;
-    if (needSave) {
-      db.saveAdminConfig(cachedConfig);
-    }
-  } else {
-    adminConfig = configSelfCheck(adminConfig);
-    cachedConfig = adminConfig;
   }
+  adminConfig = configSelfCheck(adminConfig);
+  cachedConfig = adminConfig;
   return cachedConfig;
 }
 
