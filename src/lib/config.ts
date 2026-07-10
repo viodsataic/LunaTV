@@ -305,12 +305,19 @@ export async function getConfig(): Promise<AdminConfig> {
   }
 
   // db 中无配置，执行一次初始化
+  // 注意：当缓存存在时（说明之前成功加载过），不要覆盖DB
   if (!adminConfig) {
-    adminConfig = await getInitConfig("");
+    const needSave = !cachedConfig;
+    adminConfig = await getInitConfig(cachedConfig?.ConfigFile || "");
+    adminConfig = configSelfCheck(adminConfig);
+    cachedConfig = adminConfig;
+    if (needSave) {
+      db.saveAdminConfig(cachedConfig);
+    }
+  } else {
+    adminConfig = configSelfCheck(adminConfig);
+    cachedConfig = adminConfig;
   }
-  adminConfig = configSelfCheck(adminConfig);
-  cachedConfig = adminConfig;
-  db.saveAdminConfig(cachedConfig);
   return cachedConfig;
 }
 
